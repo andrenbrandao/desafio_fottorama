@@ -4,6 +4,7 @@ import sys
 
 from PySide.QtCore import *
 from PySide.QtGui import *
+from PySide.QtSql import *
 
 qt_app = QApplication(sys.argv)
  
@@ -19,8 +20,12 @@ class LayoutExample(QWidget):
         self.setMinimumWidth(500)
         self.setMinimumHeight(500)
 
+        self.connectToDatabase()
+        self.image_options = self.getFolderImages()
+        self.image_name = self.getCurrentImage(self.image_options)
+
         self.image = QLabel()
-        self.pixmap = QPixmap("planet.jpg")
+        self.pixmap = QPixmap(self.image_name)
         self.image.setPixmap(self.pixmap)
 
         # Create the QVBoxLayout that lays out the whole form
@@ -59,15 +64,10 @@ class LayoutExample(QWidget):
 
         self.select_label = QLabel('Select image:', self)
 
-        self.current_dir = QDir.current()
-        self.current_dir.setNameFilters(['*.jpg', '*.png'])
-
-        self.image_options = QDir.entryList(self.current_dir)
-
         self.select_image = QComboBox()
         self.select_image.addItems(self.image_options)
 
-        index = self.select_image.findText('planet.jpg', Qt.MatchFixedString)
+        index = self.select_image.findText(self.image_name, Qt.MatchFixedString)
         if index >= 0:
             self.select_image.setCurrentIndex(index)
 
@@ -103,9 +103,39 @@ class LayoutExample(QWidget):
     def buttonClicked(self):
         self.qstack.setCurrentIndex(0)
         self.data = self.select_image.currentText()
-        print self.data
         self.pixmap = QPixmap(self.data)
         self.image.setPixmap(self.pixmap)
+        self.insertOrUpdateImage(self.data)
+
+    def getFolderImages(self):
+        current_dir = QDir.current()
+        current_dir.setNameFilters(['*.jpg', '*.png'])
+        image_options = QDir.entryList(current_dir)
+
+        return image_options
+
+    def connectToDatabase(self):
+        self.db = QSqlDatabase.addDatabase("QSQLITE")
+        self.db.setDatabaseName("desafio.db")
+        ok = self.db.open()
+
+    def getCurrentImage(self, options):
+        query = QSqlQuery("select name from IMAGE", self.db)
+        fieldNo = query.record().indexOf("NAME")
+        while query.next():
+            name = query.value(fieldNo)
+            image_name = name
+
+        if not 'image_name' in locals():
+            return options[0]
+        else:
+            return image_name
+
+    def insertOrUpdateImage(self, name):
+        query = QSqlQuery()
+        query.prepare("INSERT OR REPLACE INTO IMAGE (id, name) VALUES ( (SELECT CASE WHEN EXISTS ( SELECT ID FROM IMAGE) THEN (SELECT ID FROM IMAGE) ELSE 1 END ), '{}');".format(name))
+        query.exec_()
+
  
     def run(self):
         # Show the form
