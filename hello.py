@@ -60,7 +60,7 @@ class LayoutExample(QWidget):
         self.select_label = QLabel('Select image:', self)
 
         self.current_dir = QDir.current()
-        self.current_dir.setNameFilters(['*.jpg'])
+        self.current_dir.setNameFilters(['*.jpg', '*.png'])
 
         self.image_options = QDir.entryList(self.current_dir)
 
