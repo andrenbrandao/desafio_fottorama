@@ -86,7 +86,10 @@ class LayoutExample(QWidget):
 
         self.save_box.addWidget(self.save_button)
 
+
         self.layout2.addLayout(self.save_box)
+
+        self.layout2.setAlignment(Qt.AlignVCenter)
 
         self.select_crop_widget2 = QWidget()
         self.select_crop_widget2.setLayout(self.layout2)
